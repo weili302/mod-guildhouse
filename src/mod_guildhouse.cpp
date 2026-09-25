@@ -476,12 +476,28 @@ public:
     void SpawnButlerNPC(Player* player)
     {
         uint32 entry = GetCreatureEntry(1);
-        float posX = 16202.185547f;
-        float posY = 16255.916992f;
-        float posZ = 21.160221f;
-        float ori = 6.195375f;
+        float posX = 0.0f;
+        float posY = 0.0f;
+        float posZ = 0.0f;
+        float ori = 0.0f;
 
         Map* map = sMapMgr->FindMap(1, 0);
+        if (!map)
+            return;
+
+        QueryResult result = WorldDatabase.Query("SELECT `posX`, `posY`, `posZ`, `orientation` FROM `guild_house_spawns` WHERE `entry`={}", entry);
+        if (!result)
+        {
+            LOG_INFO("modules", "GUILDHOUSE: Unable to find spawn data for Butler entry: {}", entry);
+            return;
+        }
+
+        Field* fields = result->Fetch();
+        posX = fields[0].Get<float>();
+        posY = fields[1].Get<float>();
+        posZ = fields[2].Get<float>();
+        ori = fields[3].Get<float>();
+
         Creature *creature = new Creature();
 
         if (!creature->Create(map->GenerateLowGuid<HighGuid::Unit>(), map, player->GetPhaseMaskForSpawn(), entry, 0, posX, posY, posZ, ori))
@@ -720,13 +736,28 @@ public:
             return false;
         }
 
-        float posX = 16202.185547f;
-        float posY = 16255.916992f;
-        float posZ = 21.160221f;
-        float ori = 6.195375f;
+        uint32 entry = GetCreatureEntry(1);
+        float posX = 0.0f;
+        float posY = 0.0f;
+        float posZ = 0.0f;
+        float ori = 0.0f;
+
+        QueryResult result = WorldDatabase.Query("SELECT `posX`, `posY`, `posZ`, `orientation` FROM `guild_house_spawns` WHERE `entry`={}", entry);
+        if (!result)
+        {
+            handler->SendSysMessage(GetGuildHouseLocaleText(GUILDHOUSE_TEXT_CMD_BUTLER_ADD_ERROR, player).c_str());
+            handler->SetSentErrorMessage(true);
+            return false;
+        }
+
+        Field* fields = result->Fetch();
+        posX = fields[0].Get<float>();
+        posY = fields[1].Get<float>();
+        posZ = fields[2].Get<float>();
+        ori = fields[3].Get<float>();
 
         Creature* creature = new Creature();
-        if (!creature->Create(map->GenerateLowGuid<HighGuid::Unit>(), map, GetGuildPhase(player), GetCreatureEntry(1), 0, posX, posY, posZ, ori))
+        if (!creature->Create(map->GenerateLowGuid<HighGuid::Unit>(), map, GetGuildPhase(player), entry, 0, posX, posY, posZ, ori))
         {
             handler->SendSysMessage(GetGuildHouseLocaleText(GUILDHOUSE_TEXT_CMD_BUTLER_ALREADY_EXISTS, player).c_str());
             handler->SetSentErrorMessage(true);
